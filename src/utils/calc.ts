@@ -1,0 +1,63 @@
+import axios from 'axios';
+
+const KS5M_HASHRATE_TH = 15;
+const KS5M_POWER_WATT = 3400;
+const TH_TO_H = 1e12;
+
+export async function getKaspaNetworkHashrate(): Promise<number> {
+  const res = await axios.get('https://api.kaspa.org/info/hashrate');
+  return Number(res.data.hashrate) * TH_TO_H;
+}
+
+export async function getKaspaBlockReward(): Promise<number> {
+  const res = await axios.get('https://api.minerstat.com/v2/coins?list=KAS');
+  return Number(res.data[0].reward_block);
+}
+
+export async function getKaspaPrice(): Promise<number> {
+  const res = await axios.get('https://api.kaspa.org/info/price');
+  return Number(res.data.price);
+}
+
+export async function calculateSiteProfit({
+  numMachines,
+  powerRate,
+}: {
+  numMachines: number;
+  powerRate: number;
+}) {
+  const [
+    networkHashrate,
+    blockReward,
+    kasPrice
+  ] = await Promise.all([
+    getKaspaNetworkHashrate(),
+    getKaspaBlockReward(),
+    getKaspaPrice()
+  ]);
+
+  const machineHashrateH = KS5M_HASHRATE_TH * TH_TO_H;
+  const blocksPerDay = 24 * 3600;
+
+  const dailyKasPerMachine = (machineHashrateH / networkHashrate) * blocksPerDay * blockReward;
+  const dailyKas = dailyKasPerMachine * numMachines;
+  const dailyRevenue = dailyKas * kasPrice;
+
+  const dailyPowerCost = ((KS5M_POWER_WATT * 24) / 1000) * powerRate * numMachines;
+  const dailyProfit = dailyRevenue - dailyPowerCost;
+
+  const unitPowerCost = ((KS5M_POWER_WATT * 24) / 1000) * powerRate;
+  const unitProfit = (dailyKasPerMachine * kasPrice) - unitPowerCost;
+
+  console.log(`block reward: ${blockReward} KAS`)
+
+  return {
+    kas_price: kasPrice.toFixed(5),
+    daily_kas: dailyKas.toFixed(2),
+    revenue: dailyRevenue.toFixed(2),
+    cost: dailyPowerCost.toFixed(2),
+    profit: dailyProfit.toFixed(2),
+    unit_profit: unitProfit.toFixed(2),
+    network_hashrate: (networkHashrate / 1e12).toFixed(2)
+  };
+}

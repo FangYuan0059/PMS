@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Site Profit Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+  <!-- ✅ 顶部导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4">
+    <div class="container-fluid">
+      <!-- 左侧 Logo -->
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <img src="/logo.png" alt="Logo" width="40" height="40" class="me-2" style="object-fit: cover;">
+        <span class="fw-bold">Profitability Monitoring System</span>
+      </a>
+
+      <!-- 右侧 Login 链接 -->
+      <div class="d-flex">
+        <a class="btn btn-outline-primary" href="#">Login</a>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="flex-grow-1">
+  <!-- ✅ 页面内容 -->
+  <div class="container mt-5">
+    <h2 class="mb-4 text-center">Site Profit Table</h2>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <!-- 左侧显示 Network Hashrate -->
+        <div>
+          <!-- <strong>Network Hashrate:</strong> <span><%= networkHashrateTH %></span> -->
+          <strong>Network Hashrate:</strong> <span class="text-primary"><%= networkHashrateTH %></span>
+          <div class="small text-muted mb-1">
+            <em>Updated: <%= updatedTime %></em>
+          </div>
+        </div>
+      
+        <!-- 右侧 Add Site 按钮 -->
+        <div>
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addSiteModal">
+            Add Site
+          </button>
+        </div>
+    </div>
+
+
+    <!-- <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSiteModal">
+          + Add Site
+        </button>
+      </div> -->
+      
+      <!-- ✅ Bootstrap Modal -->
+      <div class="modal fade" id="addSiteModal" tabindex="-1" aria-labelledby="addSiteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <form method="POST" action="/add-site">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="addSiteModalLabel">Add New Site</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+      
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="siteName" class="form-label">Site Name</label>
+                  <input type="text" class="form-control" id="siteName" name="name" required>
+                </div>
+      
+                <div class="mb-3">
+                  <label for="machineType" class="form-label">Machine Type</label>
+                  <input type="text" class="form-control" id="machineType" name="machine_type" value="KS5M" required>
+                </div>
+      
+                <div class="mb-3">
+                  <label for="numMachines" class="form-label">Number of Machines</label>
+                  <input type="number" class="form-control" id="numMachines" name="num_machines" required>
+                </div>
+      
+                <div class="mb-3">
+                  <label for="powerRate" class="form-label">Power Cost ($/kWh)</label>
+                  <input type="number" step="0.0001" class="form-control" id="powerRate" name="power_rate" required>
+                </div>
+              </div>
+      
+              <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Add Site</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+
+    <table class="table table-bordered table-hover table-striped align-middle">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>Site</th>
+          <th>Number of Machines</th>
+          <th>Machine Type</th>
+          <th>Power Cost ($/kWh)</th>
+          <th>Kaspa Price (USD)</th>
+          <th>Unit Profit ($)</th>
+          <th>Coins Mined Daily</th>
+          <th>Daily Revenue ($)</th>
+          <th>Daily Power Cost ($)</th>
+          <th>Daily Profit ($)</th>
+        </tr>
+      </thead>
+      <tbody class="text-center">
+        <% if (sites.length === 0) { %>
+          <tr><td colspan="8" class="text-muted">No sites added yet</td></tr>
+        <% } else { %>
+          <% sites.forEach(site => { %>
+            <tr>
+              <td><%= site.name %></td>
+              <td><%= site.num_machines %></td>
+              <td><%= site.machine_type %></td>
+              <td><%= site.power_rate %></td>
+              <td><%= site.kas_price ?? '-' %></td>
+              <td class="<%= site.unit_profit >= 0 ? 'text-success' : 'text-danger' %>">
+                <%= site.unit_profit ?? '-' %>
+              </td>
+              <td><%= site.daily_kas ?? '-' %></td>
+              <td><%= site.revenue ?? '-' %></td>
+              <td><%= site.cost ?? '-' %></td>
+              <td class="<%= site.profit >= 0 ? 'text-success' : 'text-danger' %>">
+                <%= site.profit ?? '-' %>
+              </td>
+            </tr>
+          <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+  <footer class="bg-dark text-light text-center p-3 mt-5">
+    <div>
+      <small>
+        Data Source: <a href="https://api.kaspa.org" class="text-info" target="_blank">Kaspa.Org</a>  
+                     <a href="https://api.minerstat.com" class="text-info" target="_blank">Minerstat</a><br>
+        Question? Contact: <a href="mailto:youremail@example.com" class="text-info">yuanfang@bginusa.com</a>
+      </small>
+    </div>
+  </footer>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
