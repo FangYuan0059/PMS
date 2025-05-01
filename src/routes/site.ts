@@ -1,7 +1,14 @@
 import { Router } from 'express';
 import passport from 'passport';
-import { getIndexPage, postAddSite } from '../controllers/siteController';
-import { ensureLoggedIn, ensureSiteAccess } from '../middlewares/authMiddleware';
+import {
+  getIndexPage,
+  getSitePage,
+  postAddSite
+} from '../controllers/siteController';
+import {
+  ensureLoggedIn,
+  ensureSiteAccess
+} from '../middlewares/authMiddleware';
 
 const router = Router();
 
@@ -39,7 +46,7 @@ router.get('/logout', (req, res, next) => {
   });
 });
 
-// 根页面：根据身份跳转
+// 管理员首页：显示所有站点
 router.get('/', ensureLoggedIn, (req, res) => {
   const user = req.user as {
     id: number;
@@ -48,14 +55,21 @@ router.get('/', ensureLoggedIn, (req, res) => {
     location?: string | null;
   };
 
-  if (user.role === 'admin') return getIndexPage(req, res);
+  if (user.role === 'admin') {
+    return getIndexPage(req, res);
+  }
   res.redirect(`/site/${user.location}`);
 });
 
-// location 页面（带权限控制）
-router.get('/site/:location', ensureLoggedIn, ensureSiteAccess, getIndexPage);
+// 普通用户页面：只显示单个站点
+router.get(
+  '/site/:location',
+  ensureLoggedIn,
+  ensureSiteAccess,
+  getSitePage
+);
 
-// 添加站点（受限）
+// 添加站点（仅登录用户）
 router.post('/add-site', ensureLoggedIn, postAddSite);
 
 export default router;
