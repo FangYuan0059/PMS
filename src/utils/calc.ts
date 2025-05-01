@@ -10,8 +10,10 @@ export async function getKaspaNetworkHashrate(): Promise<number> {
 }
 
 export async function getKaspaBlockReward(): Promise<number> {
-  const res = await axios.get('https://api.minerstat.com/v2/coins?list=KAS');
-  return Number(res.data[0].reward_block);
+//   const res = await axios.get('https://api.minerstat.com/v2/coins?list=KAS');
+//   return Number(res.data[0].reward_block);
+    const res = await axios.get('https://api.kaspa.org/info/blockreward');
+    return Number(res.data.blockreward);
 }
 
 export async function getKaspaPrice(): Promise<number> {
@@ -37,9 +39,9 @@ export async function calculateSiteProfit({
   ]);
 
   const machineHashrateH = KS5M_HASHRATE_TH * TH_TO_H;
-  const blocksPerDay = 24 * 3600;
+  const blocksPerDay = 24 * 3600 *0.98;
 
-  const dailyKasPerMachine = (machineHashrateH / networkHashrate) * blocksPerDay * blockReward;
+  const dailyKasPerMachine = (machineHashrateH / networkHashrate) * blocksPerDay * blockReward*0.98;
   const dailyKas = dailyKasPerMachine * numMachines;
   const dailyRevenue = dailyKas * kasPrice;
 

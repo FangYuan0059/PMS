@@ -38,23 +38,14 @@
           </div>
         </div>
       
-        <!-- 右侧 Add Site 按钮 -->
-        <div>
-          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addSiteModal">
-            Add Site
-          </button>
-        </div>
-    </div>
-
-
-    <!-- <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex justify-content-end mb-3">
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSiteModal">
           + Add Site
         </button>
-      </div> -->
+    </div>
       
       <!-- ✅ Bootstrap Modal -->
-      <div class="modal fade" id="addSiteModal" tabindex="-1" aria-labelledby="addSiteModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addSiteModal" tabindex="-1" aria-labelledby="addSiteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
           <form method="POST" action="/add-site">
             <div class="modal-content">
@@ -68,7 +59,7 @@
                   <label for="siteName" class="form-label">Site Name</label>
                   <input type="text" class="form-control" id="siteName" name="name" required>
                 </div>
-      
+            
                 <div class="mb-3">
                   <label for="machineType" class="form-label">Machine Type</label>
                   <input type="text" class="form-control" id="machineType" name="machine_type" value="KS5M" required>
@@ -92,7 +83,8 @@
           </form>
         </div>
       </div>
-      
+    </div>
+ 
 
     <table class="table table-bordered table-hover table-striped align-middle">
       <thead class="table-dark text-center">
