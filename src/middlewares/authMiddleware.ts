@@ -15,9 +15,10 @@ export function ensureSiteAccess(req: Request, res: Response, next: NextFunction
     location?: string | null;
   };
 
-  const locationParam = req.params.location;
-
-  if (user.role === 'admin' || (user.role === 'user' && user.location === locationParam)) {
+  const paramLoc = req.params.location.toLowerCase();
+  const userLoc = user.location?.toLowerCase();
+  
+  if (user.role === 'admin' || (user.role === 'user' && userLoc === paramLoc)) {
     return next();
   }
 

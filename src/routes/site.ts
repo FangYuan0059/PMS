@@ -3,7 +3,8 @@ import passport from 'passport';
 import {
   getIndexPage,
   getSitePage,
-  postAddSite
+  postAddSite,
+  postUpdateSite
 } from '../controllers/siteController';
 import {
   ensureLoggedIn,
@@ -69,7 +70,15 @@ router.get(
   getSitePage
 );
 
-// 添加站点（仅登录用户）
+// 普通用户修改自己站点
+router.post(
+  '/site/:location/update',
+  ensureLoggedIn,
+  ensureSiteAccess,
+  postUpdateSite
+);
+
+// 添加站点（管理员或已登录用户）
 router.post('/add-site', ensureLoggedIn, postAddSite);
 
 export default router;
