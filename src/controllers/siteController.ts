@@ -2,70 +2,140 @@ import { Request, Response } from 'express';
 import { calculateSiteProfit } from '../utils/calc';
 import { Site } from '../models/Site';
 
+// export const getIndexPage = async (req: Request, res: Response): Promise<void> => {
+//   const db = req.app.locals.db;
+
+//   // 计算今天零点
+//   const todayMidnight = new Date();
+//   todayMidnight.setHours(0, 0, 0, 0);
+
+//   // 取所有站点基础信息
+//   const sites: Site[] = await db.all('SELECT * FROM sites');
+
+//   // 按 site_id 聚合当天累计
+//   const rows: Array<{
+//     site_id: number;
+//     hourly_kas_sum: number;
+//     revenue_sum: number;
+//     cost_sum: number;
+//     profit_sum: number;
+//   }> = await db.all(
+//     `
+//       SELECT
+//         site_id,
+//         SUM(hourly_kas) AS hourly_kas_sum,
+//         SUM(revenue)    AS revenue_sum,
+//         SUM(cost)       AS cost_sum,
+//         SUM(profit)     AS profit_sum
+//       FROM site_metrics
+//       WHERE timestamp >= ?
+//       GROUP BY site_id
+//     `
+//   );
+
+//   // 将聚合结果映射到站点
+//   const metricsMap = new Map<number, typeof rows[0]>();
+//   rows.forEach(r => metricsMap.set(r.site_id, r));
+
+//   const sitesWithMetrics = sites.map(site => {
+//     const m = metricsMap.get(site.id) || {
+//       site_id: site.id,
+//       hourly_kas_sum: 0,
+//       revenue_sum: 0,
+//       cost_sum: 0,
+//       profit_sum: 0
+//     };
+//     return {
+//       ...site,
+//       hourly_kas: m.hourly_kas_sum,
+//       revenue: m.revenue_sum,
+//       cost: m.cost_sum,
+//       profit: m.profit_sum
+//     };
+//   });
+
+//   // 最新一次网络算力
+//   const last = await db.get(
+//     `SELECT network_hashrate FROM site_metrics ORDER BY timestamp DESC LIMIT 1`
+//   );
+//   const networkHashrateTH = last ? last.network_hashrate : 'N/A';
+
+//   res.render('index', {
+//     sites: sitesWithMetrics,
+//     networkHashrateTH,
+//     updatedTime: new Date().toLocaleString()
+//   });
+// };
+
+// src/controllers/siteController.ts
+
+
 export const getIndexPage = async (req: Request, res: Response): Promise<void> => {
   const db = req.app.locals.db;
 
-  // 计算今天零点
-  const todayMidnight = new Date();
-  todayMidnight.setHours(0, 0, 0, 0);
-
-  // 取所有站点基础信息
+  // 1) 取所有站点基础信息
   const sites: Site[] = await db.all('SELECT * FROM sites');
 
-  // 按 site_id 聚合当天累计
-  const rows: Array<{
-    site_id: number;
+  // 2) 聚合当天（本地时区）每站点累计
+  const rawRows: any[] = await db.all(`
+    SELECT
+      site_id,
+      SUM(hourly_kas) AS hourly_kas_sum,
+      SUM(revenue)    AS revenue_sum,
+      SUM(cost)       AS cost_sum,
+      SUM(profit)     AS profit_sum
+    FROM site_metrics
+    WHERE timestamp >= datetime('now','localtime','start of day')
+    GROUP BY site_id
+  `);
+
+  // 3) 构建一个 Map for quick lookup
+  const metricsMap = new Map<number, {
     hourly_kas_sum: number;
     revenue_sum: number;
     cost_sum: number;
     profit_sum: number;
-  }> = await db.all(
-    `
-      SELECT
-        site_id,
-        SUM(hourly_kas) AS hourly_kas_sum,
-        SUM(revenue)    AS revenue_sum,
-        SUM(cost)       AS cost_sum,
-        SUM(profit)     AS profit_sum
-      FROM site_metrics
-      WHERE timestamp >= ?
-      GROUP BY site_id
-    `
-  );
+  }>();
+  rawRows.forEach(r => {
+    metricsMap.set(r.site_id, {
+      hourly_kas_sum: r.hourly_kas_sum ?? 0,
+      revenue_sum:    r.revenue_sum    ?? 0,
+      cost_sum:       r.cost_sum       ?? 0,
+      profit_sum:     r.profit_sum     ?? 0
+    });
+  });
 
-  // 将聚合结果映射到站点
-  const metricsMap = new Map<number, typeof rows[0]>();
-  rows.forEach(r => metricsMap.set(r.site_id, r));
-
+  // 4) 合并基础信息与聚合数据
   const sitesWithMetrics = sites.map(site => {
     const m = metricsMap.get(site.id) || {
-      site_id: site.id,
       hourly_kas_sum: 0,
-      revenue_sum: 0,
-      cost_sum: 0,
-      profit_sum: 0
+      revenue_sum:    0,
+      cost_sum:       0,
+      profit_sum:     0
     };
     return {
       ...site,
       hourly_kas: m.hourly_kas_sum,
-      revenue: m.revenue_sum,
-      cost: m.cost_sum,
-      profit: m.profit_sum
+      revenue:    m.revenue_sum,
+      cost:       m.cost_sum,
+      profit:     m.profit_sum
     };
   });
 
-  // 最新一次网络算力
-  const last = await db.get(
+  // 5) 拿最新网络算力
+  const lastHash = await db.get(
     `SELECT network_hashrate FROM site_metrics ORDER BY timestamp DESC LIMIT 1`
   );
-  const networkHashrateTH = last ? last.network_hashrate : 'N/A';
+  const networkHashrateTH = lastHash?.network_hashrate ?? 'N/A';
 
+  // 6) 渲染 admin 页面
   res.render('index', {
     sites: sitesWithMetrics,
     networkHashrateTH,
     updatedTime: new Date().toLocaleString()
   });
 };
+
 
 export const getSitePage = async (req: Request, res: Response): Promise<void> => {
   const db = req.app.locals.db;

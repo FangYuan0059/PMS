@@ -49,7 +49,10 @@ CREATE TABLE IF NOT EXISTS site_metrics (
 await db.run(
     `INSERT OR IGNORE INTO users (username, password, role, location)
      VALUES ('admin', '123', 'admin', NULL),
-            ('vincent', '123', 'user', 'york')`
+            ('vincent', '123', 'user', 'york'),
+            ('jeff', '123', 'user', 'austin'),
+            ('dan', '123', 'user', 'iowa'),
+            ('fang','123','admin', NULL)`
   );
   
 
