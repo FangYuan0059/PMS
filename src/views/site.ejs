@@ -73,16 +73,16 @@
             <td><%= site.machine_type %></td>
             <td><%= site.power_rate.toFixed(4) %></td>
             <td><%= site.kas_price %></td>
-            <td><%= site.unit_profit.toFixed(2) %></td>
-            <td><%= site.hourly_revenue.toFixed(2) %></td>
-            <td><%= site.hourly_cost.toFixed(2) %></td>
+            <td><%= site.unit_profit.toFixed(4) %></td>
+            <td><%= site.hourly_revenue.toFixed(4) %></td>
+            <td><%= site.hourly_cost.toFixed(4) %></td>
             <td class="<%= site.hourly_profit >= 0 ? 'text-success' : 'text-danger' %>">
-              <%= site.hourly_profit.toFixed(2) %>
+              <%= site.hourly_profit.toFixed(4) %>
             </td>
-            <td><%= site.cumulative_revenue.toFixed(2) %></td>
-            <td><%= site.cumulative_cost.toFixed(2) %></td>
+            <td><%= site.cumulative_revenue.toFixed(4) %></td>
+            <td><%= site.cumulative_cost.toFixed(4) %></td>
             <td class="<%= site.cumulative_profit >= 0 ? 'text-success' : 'text-danger' %>">
-              <%= site.cumulative_profit.toFixed(2) %>
+              <%= site.cumulative_profit.toFixed(4) %>
             </td>
             <td>
               <button class="btn btn-sm btn-primary"

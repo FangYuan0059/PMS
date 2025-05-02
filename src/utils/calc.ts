@@ -65,13 +65,13 @@ export async function calculateSiteProfit({
   console.log(`block reward: ${blockReward} KAS`)
 
   return {
-    kas_price: kasPrice.toFixed(5),
-    hourly_kas: hourlyKas.toFixed(2),
-    revenue: hourlyRevenue.toFixed(2),
-    cost: hourlyPowerCost.toFixed(2),
-    profit: hourlyProfit.toFixed(2),
-    unit_profit: unitProfit.toFixed(2),
-    network_hashrate: (networkHashrate / 1e12).toFixed(2)
+    kas_price: kasPrice,
+    hourly_kas: hourlyKas,
+    revenue: hourlyRevenue,
+    cost: hourlyPowerCost,
+    profit: hourlyProfit,
+    unit_profit: unitProfit,
+    network_hashrate: (networkHashrate / 1e12)
   };
 
   // return {
