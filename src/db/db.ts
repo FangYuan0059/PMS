@@ -1,5 +1,6 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
+import bcrypt from 'bcrypt';
 
 export async function initDB() {
   const db = await open({
@@ -46,16 +47,21 @@ CREATE TABLE IF NOT EXISTS site_metrics (
 `);
 
 //init datas
+const adminPwdHash = await bcrypt.hash('123', 10);
+
 await db.run(
     `INSERT OR IGNORE INTO users (username, password, role, location)
-     VALUES ('admin', '123', 'admin', NULL),
-            ('vincent', '123', 'user', 'york'),
-            ('jeff', '123', 'user', 'austin'),
-            ('dan', '123', 'user', 'iowa'),
-            ('fang','123','admin', NULL)`
+     VALUES ('admin', ?, 'admin', NULL),
+            ('vincent', ?, 'user', 'york'),
+            ('jeff', ?, 'user', 'austin'),
+            ('dan', ?, 'user', 'iowa'),
+            ('fang', ?,'admin', NULL)`,
+            adminPwdHash,
+            adminPwdHash,
+            adminPwdHash,
+            adminPwdHash,
+            adminPwdHash
   );
   
-
-
   return db;
 }
