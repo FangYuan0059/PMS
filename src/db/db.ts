@@ -28,11 +28,28 @@ CREATE TABLE IF NOT EXISTS users (
 );
 `);
 
+//site metrics
+await db.exec(`
+CREATE TABLE IF NOT EXISTS site_metrics (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  site_id           INTEGER NOT NULL,
+  timestamp         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  kas_price         REAL    NOT NULL,
+  hourly_kas        REAL    NOT NULL,
+  revenue           REAL    NOT NULL,
+  cost              REAL    NOT NULL,
+  profit            REAL    NOT NULL,
+  unit_profit       REAL    NOT NULL,
+  network_hashrate  REAL    NOT NULL,
+  FOREIGN KEY (site_id) REFERENCES sites(id)
+);
+`);
+
 //init datas
 await db.run(
     `INSERT OR IGNORE INTO users (username, password, role, location)
-     VALUES ('admin', 'admin123', 'admin', NULL),
-            ('user-1', 'user123', 'user', 'york')`
+     VALUES ('admin', '123', 'admin', NULL),
+            ('vincent', '123', 'user', 'york')`
   );
   
 

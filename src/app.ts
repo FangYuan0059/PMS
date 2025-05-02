@@ -5,6 +5,7 @@ import path from 'path';
 import { initDB } from './db/db';
 import siteRouter from './routes/site';
 import { configurePassport } from './config/passport';
+import { startMetricsScheduler } from './services/metricsScheduler';
 
 const app = express();
 const PORT = 3000;
@@ -28,6 +29,9 @@ initDB().then(db => {
   app.use(passport.session());
 
   app.use('/', siteRouter);
+
+  // 启动每小时调度任务
+  startMetricsScheduler(db);
 
   app.listen(PORT, () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
