@@ -30,8 +30,7 @@ export const getIndexPage = async (req: Request, res: Response): Promise<void> =
       FROM site_metrics
       WHERE timestamp >= ?
       GROUP BY site_id
-    `,
-    todayMidnight.toISOString()
+    `
   );
 
   // 将聚合结果映射到站点
@@ -71,27 +70,22 @@ export const getIndexPage = async (req: Request, res: Response): Promise<void> =
 export const getSitePage = async (req: Request, res: Response): Promise<void> => {
   const db = req.app.locals.db;
   const location = req.params.location;
+  console.log('🔍 [DEBUG] getSitePage for location:', location);
 
-  // 找到该站点
-  const siteFromDB: Site | undefined = await db.get(
+  // 1) 取基础信息
+  const rawSite = await db.get(
     'SELECT * FROM sites WHERE name = ? COLLATE NOCASE',
     location
   );
+  const siteFromDB = rawSite as Site | undefined;
+  console.log('🔍 [DEBUG] siteFromDB:', siteFromDB);
   if (!siteFromDB) {
     res.status(404).send('Site not found');
     return;
   }
 
-  // 当日累计
-  const todayMidnight = new Date();
-  todayMidnight.setHours(0, 0, 0, 0);
-
-  const m: {
-    hourly_kas_sum: number;
-    revenue_sum: number;
-    cost_sum: number;
-    profit_sum: number;
-  } = await db.get(
+  // 2) 聚合当天累计数据（让 SQLite 自己计算本地今天零点）
+  const rawM = await db.get(
     `
       SELECT
         SUM(hourly_kas) AS hourly_kas_sum,
@@ -100,31 +94,172 @@ export const getSitePage = async (req: Request, res: Response): Promise<void> =>
         SUM(profit)     AS profit_sum
       FROM site_metrics
       WHERE site_id = ?
-        AND timestamp >= ?
+        AND timestamp >= datetime('now','localtime','start of day')
     `,
-    siteFromDB.id,
-    todayMidnight.toISOString()
+    siteFromDB.id
   );
-
-  const site = {
-    ...siteFromDB,
-    hourly_kas: m.hourly_kas_sum || 0,
-    revenue: m.revenue_sum || 0,
-    cost: m.cost_sum || 0,
-    profit: m.profit_sum || 0
+  const m = rawM as {
+    hourly_kas_sum: number | null;
+    revenue_sum:    number | null;
+    cost_sum:       number | null;
+    profit_sum:     number | null;
   };
+  console.log('🔍 [DEBUG] aggregated metrics m:', m);
 
-  const last = await db.get(
+  // 3) 组装要渲染的数据
+  const siteData = {
+    ...siteFromDB,
+    daily_kas:     m.hourly_kas_sum ?? 0,
+    daily_revenue: m.revenue_sum    ?? 0,
+    daily_cost:    m.cost_sum       ?? 0,
+    daily_profit:  m.profit_sum     ?? 0
+  };
+  console.log('🔍 [DEBUG] siteData:', siteData);
+
+  // 4) 最新网络算力
+  const rawLast = await db.get(
     `SELECT network_hashrate FROM site_metrics ORDER BY timestamp DESC LIMIT 1`
   );
-  const networkHashrateTH = last ? last.network_hashrate : 'N/A';
+  const last = rawLast as { network_hashrate: number } | undefined;
+  console.log('🔍 [DEBUG] latest network_hashrate:', last);
 
   res.render('site', {
-    site,
-    networkHashrateTH,
+    site: siteData,
+    networkHashrateTH: last?.network_hashrate ?? 'N/A',
     updatedTime: new Date().toLocaleString()
   });
 };
+
+
+// export const getSitePage = async (req: Request, res: Response): Promise<void> => {
+//   const db = req.app.locals.db;
+//   const location = req.params.location;
+
+//   console.log('🔍 [DEBUG] getSitePage called for location:', location);
+
+//   // 1) 取单站点基础信息
+//   const siteFromDB: Site | undefined = await db.get(
+//     'SELECT * FROM sites WHERE name = ? COLLATE NOCASE',
+//     location
+//   );
+//   console.log('🔍 [DEBUG] siteFromDB:', siteFromDB);
+
+//   if (!siteFromDB) {
+//     console.error('❌ [DEBUG] Site not found in DB for:', location);
+//     res.status(404).send('Site not found');
+//     return;
+//   }
+
+//   // 2) 计算今天零点时间
+//   const todayMidnight = new Date();
+//   todayMidnight.setHours(0, 0, 0, 0);
+//   console.log('🔍 [DEBUG] todayMidnight:', todayMidnight.toISOString());
+
+//   // 3) 聚合当天累计
+//   const m: {
+//     hourly_kas_sum: number;
+//     revenue_sum: number;
+//     cost_sum: number;
+//     profit_sum: number;
+//   } = await db.get(
+//     `
+//       SELECT
+//         SUM(hourly_kas) AS hourly_kas_sum,
+//         SUM(revenue)    AS revenue_sum,
+//         SUM(cost)       AS cost_sum,
+//         SUM(profit)     AS profit_sum
+//       FROM site_metrics
+//       WHERE site_id = ?
+//         AND timestamp >= ?
+//     `,
+//     siteFromDB.id,
+//     // todayMidnight.toISOString()
+//   );
+//   console.log('🔍 [DEBUG] aggregated metrics m:', m);
+
+//   // 4) 组装“日累计”属性
+//   const siteData = {
+//     ...siteFromDB,
+//     daily_kas:     m.hourly_kas_sum || 0,
+//     daily_revenue: m.revenue_sum    || 0,
+//     daily_cost:    m.cost_sum       || 0,
+//     daily_profit:  m.profit_sum     || 0
+//   };
+//   console.log('🔍 [DEBUG] siteData (to be sent to template):', siteData);
+
+//   // 5) 拿最新一次网络算力（TH/s）
+//   const last = await db.get(
+//     `SELECT network_hashrate FROM site_metrics ORDER BY timestamp DESC LIMIT 1`
+//   );
+//   console.log('🔍 [DEBUG] latest network_hashrate record:', last);
+
+//   const networkHashrateTH = last ? last.network_hashrate : 'N/A';
+
+//   res.render('site', {
+//     site: siteData,
+//     networkHashrateTH,
+//     updatedTime: new Date().toLocaleString()
+//   });
+// };
+
+
+// export const getSitePage = async (req: Request, res: Response): Promise<void> => {
+//   const db = req.app.locals.db;
+//   const location = req.params.location;
+
+//   // 找到该站点
+//   const siteFromDB: Site | undefined = await db.get(
+//     'SELECT * FROM sites WHERE name = ? COLLATE NOCASE',
+//     location
+//   );
+//   if (!siteFromDB) {
+//     res.status(404).send('Site not found');
+//     return;
+//   }
+
+//   // 当日累计
+//   const todayMidnight = new Date();
+//   todayMidnight.setHours(0, 0, 0, 0);
+
+//   const m: {
+//     hourly_kas_sum: number;
+//     revenue_sum: number;
+//     cost_sum: number;
+//     profit_sum: number;
+//   } = await db.get(
+//     `
+//       SELECT
+//         SUM(hourly_kas) AS hourly_kas_sum,
+//         SUM(revenue)    AS revenue_sum,
+//         SUM(cost)       AS cost_sum,
+//         SUM(profit)     AS profit_sum
+//       FROM site_metrics
+//       WHERE site_id = ?
+//         AND timestamp >= ?
+//     `,
+//     siteFromDB.id,
+//     todayMidnight.toISOString()
+//   );
+
+//   const site = {
+//     ...siteFromDB,
+//     hourly_kas: m.hourly_kas_sum || 0,
+//     revenue: m.revenue_sum || 0,
+//     cost: m.cost_sum || 0,
+//     profit: m.profit_sum || 0
+//   };
+
+//   const last = await db.get(
+//     `SELECT network_hashrate FROM site_metrics ORDER BY timestamp DESC LIMIT 1`
+//   );
+//   const networkHashrateTH = last ? last.network_hashrate : 'N/A';
+
+//   res.render('site', {
+//     site,
+//     networkHashrateTH,
+//     updatedTime: new Date().toLocaleString()
+//   });
+// };
 
 export const postAddSite = async (req: Request, res: Response): Promise<void> => {
   const db = req.app.locals.db;

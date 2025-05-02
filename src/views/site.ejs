@@ -19,14 +19,12 @@
       </div>
     </div>
   </nav>
-  
+
   <main class="flex-grow-1">
     <div class="container mt-5">
 
-      <!-- 站点标题 -->
-      <h2 class="mb-4 text-center">Site Details – <%= site.name %></h2>
+      <h2 class="mb-4 text-center">Today’s Cumulative – <%= site.name %></h2>
 
-      <!-- Network Hashrate & 更新时间 -->
       <div class="mb-3 text-center">
         <strong>Network Hashrate:</strong>
         <span class="text-primary"><%= networkHashrateTH %> TH/s</span>
@@ -35,41 +33,29 @@
         </div>
       </div>
 
-      <!-- 单站点数据表 -->
       <table class="table table-bordered table-hover table-striped align-middle text-center">
         <thead class="table-dark">
           <tr>
-            <th>Site</th>
             <th># Machines</th>
-            <th>Machine Type</th>
             <th>Power Cost ($/kWh)</th>
-            <th>Kaspa Price (USD)</th>
-            <th>Unit Profit ($)</th>
-            <th>Coins Mined Daily</th>
-            <th>Daily Revenue ($)</th>
-            <th>Daily Power Cost ($)</th>
-            <th>Daily Profit ($)</th>
-            <th>Actions</th>  <!-- 新增 Actions 列 -->
+            <th>Coins Mined Today</th>
+            <th>Revenue Today ($)</th>
+            <th>Cost Today ($)</th>
+            <th>Profit Today ($)</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><%= site.name %></td>
             <td><%= site.num_machines %></td>
-            <td><%= site.machine_type %></td>
             <td><%= site.power_rate %></td>
-            <td><%= site.kas_price %></td>
-            <td class="<%= parseFloat(site.unit_profit) >= 0 ? 'text-success' : 'text-danger' %>">
-              <%= site.unit_profit %>
-            </td>
             <td><%= site.daily_kas %></td>
-            <td><%= site.revenue %></td>
-            <td><%= site.cost %></td>
-            <td class="<%= parseFloat(site.profit) >= 0 ? 'text-success' : 'text-danger' %>">
-              <%= site.profit %>
+            <td><%= site.daily_revenue %></td>
+            <td><%= site.daily_cost.toFixed(2) %></td>
+            <td class="<%= site.daily_profit >= 0 ? 'text-success' : 'text-danger' %>">
+              <%= site.daily_profit %>
             </td>
             <td>
-              <!-- 将 Edit 按钮移到这里 -->
               <button class="btn btn-sm btn-primary"
                       data-bs-toggle="modal"
                       data-bs-target="#editSiteModal">
@@ -82,6 +68,8 @@
 
     </div>
   </main>
+  
+
 
   <!-- Edit Modal（保持不变） -->
   <div class="modal fade" id="editSiteModal" tabindex="-1" aria-labelledby="editSiteModalLabel" aria-hidden="true">
