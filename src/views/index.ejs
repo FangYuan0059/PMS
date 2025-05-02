@@ -15,7 +15,22 @@
         <span class="fw-bold">Admin Dashboard</span>
       </a>
       <div class="d-flex">
-        <a class="btn btn-outline-primary me-2" href="/logout">Logout</a>
+        <!-- 用户下拉菜单 -->
+        <div class="dropdown me-3">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                  id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+            <%= user.username %>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+            <li>
+              <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                Change Password
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/logout">Logout</a></li>
+          </ul>
+        </div>
         <!-- Add Site 按钮 -->
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSiteModal">
           + Add Site
@@ -24,6 +39,7 @@
     </div>
   </nav>
 
+  <!-- 主体内容 -->
   <main class="flex-grow-1">
     <div class="container mt-5">
 
@@ -31,12 +47,10 @@
       <div class="mb-4 text-center">
         <strong>Network Hashrate:</strong>
         <span class="text-primary"><%= networkHashrateTH %> TH/s</span>
-        <div class="small text-muted">
-          <em>Updated: <%= updatedTime %></em>
-        </div>
+        <div class="small text-muted"><em>Updated: <%= updatedTime %></em></div>
       </div>
 
-      <!-- 每个站点独立表格 -->
+      <!-- 各站点表格 -->
       <% sites.forEach(site => { %>
         <div class="card mb-4">
           <div class="card-header bg-dark text-light">
@@ -78,7 +92,9 @@
                     <%= site.cumulative_profit.toFixed(2) %>
                   </td>
                   <td>
-                    <a href="/site/<%= site.name.toLowerCase() %>" class="btn btn-sm btn-info">View</a>
+                    <a href="/site/<%= site.name.toLowerCase() %>" class="btn btn-sm btn-info">
+                      View
+                    </a>
                   </td>
                 </tr>
               </tbody>
@@ -97,7 +113,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="addSiteModalLabel">Add New Site</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
             <div class="mb-3">
@@ -120,6 +136,38 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="submit" class="btn btn-success">Add Site</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form method="POST" action="/change-password">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="currentPassword" class="form-label">Current Password</label>
+              <input type="password" class="form-control" id="currentPassword" name="currentPassword" required>
+            </div>
+            <div class="mb-3">
+              <label for="newPassword" class="form-label">New Password</label>
+              <input type="password" class="form-control" id="newPassword" name="newPassword" required>
+            </div>
+            <div class="mb-3">
+              <label for="confirmPassword" class="form-label">Confirm New Password</label>
+              <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Change Password</button>
           </div>
         </div>
       </form>

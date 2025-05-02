@@ -98,7 +98,8 @@ export const getIndexPage = async (req: Request, res: Response): Promise<void> =
   res.render('index', {
     sites: sitesWithMetrics,
     networkHashrateTH,
-    updatedTime: new Date().toLocaleString()
+    updatedTime: new Date().toLocaleString(),
+    user: req.user
   });
 };
 
@@ -185,7 +186,8 @@ export const getSitePage = async (req: Request, res: Response): Promise<void> =>
   res.render('site', {
     site: siteData,
     networkHashrateTH: latest.network_hashrate,
-    updatedTime: new Date().toLocaleString()
+    updatedTime: new Date().toLocaleString(),
+    user: req.user
   });
 };
 

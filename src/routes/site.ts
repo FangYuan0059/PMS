@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import passport from 'passport';
+import { postChangePassword } from '../controllers/authController';
 import {
   getIndexPage,
   getSitePage,
@@ -80,5 +81,8 @@ router.post(
 
 // 添加站点（管理员或已登录用户）
 router.post('/add-site', ensureLoggedIn, postAddSite);
+
+// 新增：修改密码
+router.post('/change-password', ensureLoggedIn, postChangePassword);
 
 export default router;
