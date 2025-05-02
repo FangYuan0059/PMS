@@ -32,7 +32,7 @@
         </div>
       </div>
 
-      <!-- 针对每个站点，单独渲染一张表 -->
+      <!-- 每个站点独立表格 -->
       <% sites.forEach(site => { %>
         <div class="card mb-4">
           <div class="card-header bg-dark text-light">
@@ -46,10 +46,13 @@
                   <th>Machine Type</th>
                   <th>Power Cost ($/kWh)</th>
                   <th>Kaspa Price (USD)</th>
-                  <th>Units/Hour</th>
+                  <th>Unit Profit ($/h)</th>
                   <th>Hourly Revenue ($)</th>
                   <th>Hourly Cost ($)</th>
                   <th>Hourly Profit ($)</th>
+                  <th>Cuml. Revenue (Daily)</th>
+                  <th>Cuml. Cost (Daily)</th>
+                  <th>Cuml. Profit (Daily)</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -59,11 +62,16 @@
                   <td><%= site.machine_type %></td>
                   <td><%= site.power_rate.toFixed(4) %></td>
                   <td><%= site.kas_price %></td>
-                  <td><%= site.hourly_kas.toFixed(2) %></td>
-                  <td><%= site.revenue.toFixed(2) %></td>
-                  <td><%= site.cost.toFixed(2) %></td>
-                  <td class="<%= site.profit >= 0 ? 'text-success' : 'text-danger' %>">
-                    <%= site.profit.toFixed(2) %>
+                  <td><%= site.unit_profit.toFixed(2) %></td>
+                  <td><%= site.hourly_revenue.toFixed(2) %></td>
+                  <td><%= site.hourly_cost.toFixed(2) %></td>
+                  <td class="<%= site.hourly_profit >= 0 ? 'text-success' : 'text-danger' %>">
+                    <%= site.hourly_profit.toFixed(2) %>
+                  </td>
+                  <td><%= site.cumulative_revenue.toFixed(2) %></td>
+                  <td><%= site.cumulative_cost.toFixed(2) %></td>
+                  <td class="<%= site.cumulative_profit >= 0 ? 'text-success' : 'text-danger' %>">
+                    <%= site.cumulative_profit.toFixed(2) %>
                   </td>
                   <td>
                     <a href="/site/<%= site.name.toLowerCase() %>" class="btn btn-sm btn-info">

@@ -11,7 +11,7 @@
   <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-4">
     <div class="container-fluid">
       <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="/logo.png" alt="Logo" width="40" height="40" class="me-2" style="object-fit: cover;">
+        <img src="/logo.png" width="40" height="40" class="me-2" alt="Logo">
         <span class="fw-bold">Profitability Monitoring System</span>
       </a>
       <div class="d-flex">
@@ -19,11 +19,11 @@
       </div>
     </div>
   </nav>
-
+  
   <main class="flex-grow-1">
     <div class="container mt-5">
 
-      <h2 class="mb-4 text-center">Today’s Cumulative – <%= site.name %></h2>
+      <h2 class="mb-4 text-center">Site Details – <%= site.name %></h2>
 
       <div class="mb-3 text-center">
         <strong>Network Hashrate:</strong>
@@ -37,23 +37,35 @@
         <thead class="table-dark">
           <tr>
             <th># Machines</th>
+            <th>Machine Type</th>
             <th>Power Cost ($/kWh)</th>
-            <th>Coins Mined Today</th>
-            <th>Revenue Today ($)</th>
-            <th>Cost Today ($)</th>
-            <th>Profit Today ($)</th>
+            <th>Kaspa Price (USD)</th>
+            <th>Unit Profit ($/h)</th>
+            <th>Hourly Revenue ($)</th>
+            <th>Hourly Cost ($)</th>
+            <th>Hourly Profit ($)</th>
+            <th>Cuml. Revenue (Daily)</th>
+            <th>Cuml. Cost (Daily)</th>
+            <th>Cuml. Profit (Daily)</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td><%= site.num_machines %></td>
-            <td><%= site.power_rate %></td>
-            <td><%= site.daily_kas %></td>
-            <td><%= site.daily_revenue %></td>
-            <td><%= site.daily_cost.toFixed(2) %></td>
-            <td class="<%= site.daily_profit >= 0 ? 'text-success' : 'text-danger' %>">
-              <%= site.daily_profit %>
+            <td><%= site.machine_type %></td>
+            <td><%= site.power_rate.toFixed(4) %></td>
+            <td><%= site.kas_price %></td>
+            <td><%= site.unit_profit.toFixed(2) %></td>
+            <td><%= site.hourly_revenue.toFixed(2) %></td>
+            <td><%= site.hourly_cost.toFixed(2) %></td>
+            <td class="<%= site.hourly_profit >= 0 ? 'text-success' : 'text-danger' %>">
+              <%= site.hourly_profit.toFixed(2) %>
+            </td>
+            <td><%= site.cumulative_revenue.toFixed(2) %></td>
+            <td><%= site.cumulative_cost.toFixed(2) %></td>
+            <td class="<%= site.cumulative_profit >= 0 ? 'text-success' : 'text-danger' %>">
+              <%= site.cumulative_profit.toFixed(2) %>
             </td>
             <td>
               <button class="btn btn-sm btn-primary"
@@ -68,9 +80,6 @@
 
     </div>
   </main>
-  
-
-
   <!-- Edit Modal（保持不变） -->
   <div class="modal fade" id="editSiteModal" tabindex="-1" aria-labelledby="editSiteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -101,15 +110,18 @@
     </div>
   </div>
 
-  <!-- 页脚 -->
   <footer class="bg-dark text-light text-center p-3 mt-5">
     <small>
-      Data Source: <a href="https://api.kaspa.org" class="text-info">Kaspa.Org</a>
+      Data Source: <a href="https://api.kaspa.org" class="text-info">Kaspa.Org</a>,
       <a href="https://api.minerstat.com" class="text-info">Minerstat</a><br>
-      Contact: <a href="mailto:yuanfang@bginusa.com" class="text-info">yuanfang@bginusa.com</a>
+      Contact: <a href="mailto:youremail@example.com" class="text-info">yuanfang@bginusa.com</a>
     </small>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+
+
+

@@ -1,134 +1,100 @@
 import { Request, Response } from 'express';
-import { calculateSiteProfit } from '../utils/calc';
 import { Site } from '../models/Site';
 
-// export const getIndexPage = async (req: Request, res: Response): Promise<void> => {
-//   const db = req.app.locals.db;
-
-//   // 计算今天零点
-//   const todayMidnight = new Date();
-//   todayMidnight.setHours(0, 0, 0, 0);
-
-//   // 取所有站点基础信息
-//   const sites: Site[] = await db.all('SELECT * FROM sites');
-
-//   // 按 site_id 聚合当天累计
-//   const rows: Array<{
-//     site_id: number;
-//     hourly_kas_sum: number;
-//     revenue_sum: number;
-//     cost_sum: number;
-//     profit_sum: number;
-//   }> = await db.all(
-//     `
-//       SELECT
-//         site_id,
-//         SUM(hourly_kas) AS hourly_kas_sum,
-//         SUM(revenue)    AS revenue_sum,
-//         SUM(cost)       AS cost_sum,
-//         SUM(profit)     AS profit_sum
-//       FROM site_metrics
-//       WHERE timestamp >= ?
-//       GROUP BY site_id
-//     `
-//   );
-
-//   // 将聚合结果映射到站点
-//   const metricsMap = new Map<number, typeof rows[0]>();
-//   rows.forEach(r => metricsMap.set(r.site_id, r));
-
-//   const sitesWithMetrics = sites.map(site => {
-//     const m = metricsMap.get(site.id) || {
-//       site_id: site.id,
-//       hourly_kas_sum: 0,
-//       revenue_sum: 0,
-//       cost_sum: 0,
-//       profit_sum: 0
-//     };
-//     return {
-//       ...site,
-//       hourly_kas: m.hourly_kas_sum,
-//       revenue: m.revenue_sum,
-//       cost: m.cost_sum,
-//       profit: m.profit_sum
-//     };
-//   });
-
-//   // 最新一次网络算力
-//   const last = await db.get(
-//     `SELECT network_hashrate FROM site_metrics ORDER BY timestamp DESC LIMIT 1`
-//   );
-//   const networkHashrateTH = last ? last.network_hashrate : 'N/A';
-
-//   res.render('index', {
-//     sites: sitesWithMetrics,
-//     networkHashrateTH,
-//     updatedTime: new Date().toLocaleString()
-//   });
-// };
-
-// src/controllers/siteController.ts
-
-
 export const getIndexPage = async (req: Request, res: Response): Promise<void> => {
-  const db = req.app.locals.db;
+  const db = req.app.locals.db as any;
 
   // 1) 取所有站点基础信息
-  const sites: Site[] = await db.all('SELECT * FROM sites');
+  const sites = (await db.all('SELECT * FROM sites')) as Site[];
 
-  // 2) 聚合当天（本地时区）每站点累计
-  const rawRows: any[] = await db.all(`
+  // 2) 聚合当天累计
+  const rawDaily = (await db.all(`
     SELECT
       site_id,
-      SUM(hourly_kas) AS hourly_kas_sum,
-      SUM(revenue)    AS revenue_sum,
-      SUM(cost)       AS cost_sum,
-      SUM(profit)     AS profit_sum
+      SUM(revenue) AS revenue_sum,
+      SUM(cost)    AS cost_sum,
+      SUM(profit)  AS profit_sum
     FROM site_metrics
     WHERE timestamp >= datetime('now','localtime','start of day')
     GROUP BY site_id
-  `);
-
-  // 3) 构建一个 Map for quick lookup
-  const metricsMap = new Map<number, {
-    hourly_kas_sum: number;
-    revenue_sum: number;
-    cost_sum: number;
-    profit_sum: number;
-  }>();
-  rawRows.forEach(r => {
-    metricsMap.set(r.site_id, {
-      hourly_kas_sum: r.hourly_kas_sum ?? 0,
-      revenue_sum:    r.revenue_sum    ?? 0,
-      cost_sum:       r.cost_sum       ?? 0,
-      profit_sum:     r.profit_sum     ?? 0
+  `)) as Array<{
+    site_id: number;
+    revenue_sum: number | null;
+    cost_sum: number | null;
+    profit_sum: number | null;
+  }>;
+  const dailyMap = new Map<number, { revenue_sum: number; cost_sum: number; profit_sum: number }>();
+  rawDaily.forEach(r => {
+    dailyMap.set(r.site_id, {
+      revenue_sum: r.revenue_sum ?? 0,
+      cost_sum:    r.cost_sum    ?? 0,
+      profit_sum:  r.profit_sum  ?? 0
     });
   });
 
-  // 4) 合并基础信息与聚合数据
+  // 3) 取最新一条指标（包括 unit_profit）
+  const rawLatest = (await db.all(`
+    SELECT
+      site_id,
+      kas_price,
+      network_hashrate,
+      hourly_kas,
+      revenue    AS hourly_revenue,
+      cost       AS hourly_cost,
+      profit     AS hourly_profit,
+      unit_profit
+    FROM site_metrics
+    WHERE (site_id, timestamp) IN (
+      SELECT site_id, MAX(timestamp)
+      FROM site_metrics
+      GROUP BY site_id
+    )
+  `)) as Array<{
+    site_id: number;
+    kas_price: string;
+    network_hashrate: number;
+    hourly_kas: number;
+    hourly_revenue: number;
+    hourly_cost: number;
+    hourly_profit: number;
+    unit_profit: string;
+  }>;
+  const latestMap = new Map<number, typeof rawLatest[0]>();
+  rawLatest.forEach(r => latestMap.set(r.site_id, r));
+
+  // 4) 合并
   const sitesWithMetrics = sites.map(site => {
-    const m = metricsMap.get(site.id) || {
-      hourly_kas_sum: 0,
-      revenue_sum:    0,
-      cost_sum:       0,
-      profit_sum:     0
+    const daily = dailyMap.get(site.id) || { revenue_sum: 0, cost_sum: 0, profit_sum: 0 };
+    const latest = latestMap.get(site.id) || {
+      site_id: site.id,
+      kas_price: '-',
+      network_hashrate: 0,
+      hourly_kas: 0,
+      hourly_revenue: 0,
+      hourly_cost: 0,
+      hourly_profit: 0,
+      unit_profit: '0.00'
     };
     return {
       ...site,
-      hourly_kas: m.hourly_kas_sum,
-      revenue:    m.revenue_sum,
-      cost:       m.cost_sum,
-      profit:     m.profit_sum
+      kas_price:          latest.kas_price,
+      hourly_revenue:     latest.hourly_revenue,
+      hourly_cost:        latest.hourly_cost,
+      hourly_profit:      latest.hourly_profit,
+      unit_profit:        parseFloat(latest.unit_profit),
+      cumulative_revenue: daily.revenue_sum,
+      cumulative_cost:    daily.cost_sum,
+      cumulative_profit:  daily.profit_sum
     };
   });
 
-  // 5) 拿最新网络算力
-  const lastHash = await db.get(
+  // 5) 全局最新网络算力
+  const rawGlobal = await db.get(
     `SELECT network_hashrate FROM site_metrics ORDER BY timestamp DESC LIMIT 1`
   );
-  const networkHashrateTH = lastHash?.network_hashrate ?? 'N/A';
+  const networkHashrateTH = rawGlobal?.network_hashrate ?? 'N/A';
 
-  // 6) 渲染 admin 页面
+  // 6) 渲染
   res.render('index', {
     sites: sitesWithMetrics,
     networkHashrateTH,
@@ -136,69 +102,157 @@ export const getIndexPage = async (req: Request, res: Response): Promise<void> =
   });
 };
 
-
 export const getSitePage = async (req: Request, res: Response): Promise<void> => {
-  const db = req.app.locals.db;
+  const db = req.app.locals.db as any;
   const location = req.params.location;
-  console.log('🔍 [DEBUG] getSitePage for location:', location);
 
-  // 1) 取基础信息
+  // 基础信息
   const rawSite = await db.get(
     'SELECT * FROM sites WHERE name = ? COLLATE NOCASE',
     location
   );
   const siteFromDB = rawSite as Site | undefined;
-  console.log('🔍 [DEBUG] siteFromDB:', siteFromDB);
   if (!siteFromDB) {
     res.status(404).send('Site not found');
     return;
   }
 
-  // 2) 聚合当天累计数据（让 SQLite 自己计算本地今天零点）
-  const rawM = await db.get(
+  // 当日累计
+  const rawDaily = await db.get(
     `
       SELECT
-        SUM(hourly_kas) AS hourly_kas_sum,
-        SUM(revenue)    AS revenue_sum,
-        SUM(cost)       AS cost_sum,
-        SUM(profit)     AS profit_sum
+        SUM(revenue) AS revenue_sum,
+        SUM(cost)    AS cost_sum,
+        SUM(profit)  AS profit_sum
       FROM site_metrics
       WHERE site_id = ?
         AND timestamp >= datetime('now','localtime','start of day')
     `,
     siteFromDB.id
-  );
-  const m = rawM as {
-    hourly_kas_sum: number | null;
-    revenue_sum:    number | null;
-    cost_sum:       number | null;
-    profit_sum:     number | null;
+  ) as { revenue_sum: number | null; cost_sum: number | null; profit_sum: number | null };
+  const daily = {
+    revenue_sum: rawDaily.revenue_sum ?? 0,
+    cost_sum:    rawDaily.cost_sum    ?? 0,
+    profit_sum:  rawDaily.profit_sum  ?? 0
   };
-  console.log('🔍 [DEBUG] aggregated metrics m:', m);
 
-  // 3) 组装要渲染的数据
+  // 最新小时指标
+  const rawLatest = await db.get(
+    `
+      SELECT
+        kas_price,
+        network_hashrate,
+        revenue    AS hourly_revenue,
+        cost       AS hourly_cost,
+        profit     AS hourly_profit,
+        unit_profit
+      FROM site_metrics
+      WHERE site_id = ?
+      ORDER BY timestamp DESC
+      LIMIT 1
+    `,
+    siteFromDB.id
+  ) as {
+    kas_price: string;
+    network_hashrate: number;
+    hourly_revenue: number | null;
+    hourly_cost: number | null;
+    hourly_profit: number | null;
+    unit_profit: string;
+  };
+  const latest = {
+    kas_price:       rawLatest.kas_price,
+    network_hashrate: rawLatest.network_hashrate,
+    hourly_revenue:  rawLatest.hourly_revenue ?? 0,
+    hourly_cost:     rawLatest.hourly_cost    ?? 0,
+    hourly_profit:   rawLatest.hourly_profit  ?? 0,
+    unit_profit:     parseFloat(rawLatest.unit_profit)
+  };
+
+  // 组装
   const siteData = {
     ...siteFromDB,
-    daily_kas:     m.hourly_kas_sum ?? 0,
-    daily_revenue: m.revenue_sum    ?? 0,
-    daily_cost:    m.cost_sum       ?? 0,
-    daily_profit:  m.profit_sum     ?? 0
+    kas_price:          latest.kas_price,
+    hourly_revenue:     latest.hourly_revenue,
+    hourly_cost:        latest.hourly_cost,
+    hourly_profit:      latest.hourly_profit,
+    unit_profit:        latest.unit_profit,
+    cumulative_revenue: daily.revenue_sum,
+    cumulative_cost:    daily.cost_sum,
+    cumulative_profit:  daily.profit_sum
   };
-  console.log('🔍 [DEBUG] siteData:', siteData);
-
-  // 4) 最新网络算力
-  const rawLast = await db.get(
-    `SELECT network_hashrate FROM site_metrics ORDER BY timestamp DESC LIMIT 1`
-  );
-  const last = rawLast as { network_hashrate: number } | undefined;
-  console.log('🔍 [DEBUG] latest network_hashrate:', last);
 
   res.render('site', {
     site: siteData,
-    networkHashrateTH: last?.network_hashrate ?? 'N/A',
+    networkHashrateTH: latest.network_hashrate,
     updatedTime: new Date().toLocaleString()
   });
 };
+
+
+
+// export const getSitePage = async (req: Request, res: Response): Promise<void> => {
+//   const db = req.app.locals.db;
+//   const location = req.params.location;
+//   console.log('🔍 [DEBUG] getSitePage for location:', location);
+
+//   // 1) 取基础信息
+//   const rawSite = await db.get(
+//     'SELECT * FROM sites WHERE name = ? COLLATE NOCASE',
+//     location
+//   );
+//   const siteFromDB = rawSite as Site | undefined;
+//   console.log('🔍 [DEBUG] siteFromDB:', siteFromDB);
+//   if (!siteFromDB) {
+//     res.status(404).send('Site not found');
+//     return;
+//   }
+
+//   // 2) 聚合当天累计数据（让 SQLite 自己计算本地今天零点）
+//   const rawM = await db.get(
+//     `
+//       SELECT
+//         SUM(hourly_kas) AS hourly_kas_sum,
+//         SUM(revenue)    AS revenue_sum,
+//         SUM(cost)       AS cost_sum,
+//         SUM(profit)     AS profit_sum
+//       FROM site_metrics
+//       WHERE site_id = ?
+//         AND timestamp >= datetime('now','localtime','start of day')
+//     `,
+//     siteFromDB.id
+//   );
+//   const m = rawM as {
+//     hourly_kas_sum: number | null;
+//     revenue_sum:    number | null;
+//     cost_sum:       number | null;
+//     profit_sum:     number | null;
+//   };
+//   console.log('🔍 [DEBUG] aggregated metrics m:', m);
+
+//   // 3) 组装要渲染的数据
+//   const siteData = {
+//     ...siteFromDB,
+//     daily_kas:     m.hourly_kas_sum ?? 0,
+//     daily_revenue: m.revenue_sum    ?? 0,
+//     daily_cost:    m.cost_sum       ?? 0,
+//     daily_profit:  m.profit_sum     ?? 0
+//   };
+//   console.log('🔍 [DEBUG] siteData:', siteData);
+
+//   // 4) 最新网络算力
+//   const rawLast = await db.get(
+//     `SELECT network_hashrate FROM site_metrics ORDER BY timestamp DESC LIMIT 1`
+//   );
+//   const last = rawLast as { network_hashrate: number } | undefined;
+//   console.log('🔍 [DEBUG] latest network_hashrate:', last);
+
+//   res.render('site', {
+//     site: siteData,
+//     networkHashrateTH: last?.network_hashrate ?? 'N/A',
+//     updatedTime: new Date().toLocaleString()
+//   });
+// };
 
 
 // export const getSitePage = async (req: Request, res: Response): Promise<void> => {

@@ -5,7 +5,7 @@ import type { Database } from 'sqlite';
 
 export function startMetricsScheduler(db: Database) {
   // 在每个小时的第 0 分钟触发
-  cron.schedule('* * * * *', async () => {
+  cron.schedule('0 * * * *', async () => {
     console.log('⏱️ Running hourly metrics calculation...');
 
     const sites: Array<{
