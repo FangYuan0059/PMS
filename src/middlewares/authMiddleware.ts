@@ -7,6 +7,13 @@ export function ensureLoggedIn(req: Request, res: Response, next: NextFunction) 
   next();
 }
 
+
+export function ensureAdmin(req: Request, res: Response, next: NextFunction) {
+  const user = req.user as { role: string };
+  if (user && user.role === 'admin') return next();
+  res.status(403).send('Forbidden');
+}
+
 export function ensureSiteAccess(req: Request, res: Response, next: NextFunction) {
   const user = req.user as {
     id: number;

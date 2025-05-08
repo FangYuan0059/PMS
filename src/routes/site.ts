@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import passport from 'passport';
 import { postChangePassword } from '../controllers/authController';
+import { postAddUser } from '../controllers/userController';
 import {
   getIndexPage,
   getSitePage,
@@ -9,7 +10,8 @@ import {
 } from '../controllers/siteController';
 import {
   ensureLoggedIn,
-  ensureSiteAccess
+  ensureSiteAccess,
+  ensureAdmin
 } from '../middlewares/authMiddleware';
 
 const router = Router();
@@ -84,5 +86,7 @@ router.post('/add-site', ensureLoggedIn, postAddSite);
 
 // 新增：修改密码
 router.post('/change-password', ensureLoggedIn, postChangePassword);
+
+router.post('/add-user', ensureLoggedIn, ensureAdmin, postAddUser);
 
 export default router;
