@@ -99,7 +99,9 @@ export const getIndexPage = async (req: Request, res: Response): Promise<void> =
     sites: sitesWithMetrics,
     networkHashrateTH,
     updatedTime: new Date().toLocaleString(),
-    user: req.user
+    user: req.user,
+    error: req.query.error as string | undefined,
+    success: req.query.success as string | undefined
   });
 };
 
@@ -187,7 +189,9 @@ export const getSitePage = async (req: Request, res: Response): Promise<void> =>
     site: siteData,
     networkHashrateTH: latest.network_hashrate,
     updatedTime: new Date().toLocaleString(),
-    user: req.user
+    user: req.user,
+    error: req.query.error as string | undefined,
+    success: req.query.success as string | undefined
   });
 };
 

@@ -10,6 +10,16 @@ export const postAddUser = async (req: Request, res: Response): Promise<void> =>
   if (!username || !password || !location) {
     return res.redirect(`${req.header('Referer') || '/'}?error=missing_fields`);
   }
+    
+  // check for existing username
+  const existing = await db.get(
+    'SELECT 1 FROM users WHERE username = ?',
+    username
+  );
+  if (existing) {
+    // redirect back with error flag
+    return res.redirect(`${req.header('Referer') || '/'}?error=user_exists`);
+  }
 
   // 哈希密码
   const hash = await bcrypt.hash(password, 10);

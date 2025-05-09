@@ -22,6 +22,7 @@
             <%= user.username %>
           </button>
           <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+
           <!-- 新增“Add User” -->
             <li>
               <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#addUserModal">
@@ -38,6 +39,26 @@
             <li><a class="dropdown-item" href="/logout">Logout</a></li>
           </ul>
         </div>
+
+      <!--  用户以存在的错误提示 -->
+      <% if (error === 'user_exists') { %>
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+          User already exists.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <% } else if (error === 'missing_fields') { %>
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+          Please fill in all fields.
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <% } %>
+  
+        <% if (success === 'user_added') { %>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          New user created!
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <% } %>
         <!-- Add Site 按钮 -->
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSiteModal">
           + Add Site
