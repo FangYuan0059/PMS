@@ -40,7 +40,8 @@ export async function calculateSiteProfit({
 
   const machineHashrateH = KS5M_HASHRATE_TH * TH_TO_H;
   // const blocksPerDay = 24 * 3600 *0.98;
-  const blocksPerHour = 3600 *0.98;
+  const stability = 10; //temp use, need to modify later.
+  const blocksPerHour = 3600 *0.98*stability;
 
   // const dailyKasPerMachine = (machineHashrateH / networkHashrate) * blocksPerDay * blockReward*0.98;
   // const dailyKas = dailyKasPerMachine * numMachines;
@@ -60,9 +61,28 @@ export async function calculateSiteProfit({
   // const unitProfit = (dailyKasPerMachine * kasPrice) - unitPowerCost;
 
   const unitPowerCost = ((KS5M_POWER_WATT) / 1000) * powerRate;
-  const unitProfit = (hourlyKasPerMachine * kasPrice) - unitPowerCost;
+  const unitRevenue = hourlyKasPerMachine * kasPrice;
+  const unitProfit = unitRevenue - unitPowerCost;
+  const unit_daily_profit = unitProfit*24;
 
   console.log(`block reward: ${blockReward} KAS`)
+
+  console.log('--- calculateSiteProfit result ---');
+  console.log({
+    kas_price: kasPrice,
+    unit_kas: hourlyKasPerMachine,
+    unit_PowerCost: unitPowerCost,
+    unit_profit: unitProfit,
+    unit_revenue: unitRevenue,
+    daily_profit_unit: unit_daily_profit,
+    
+    hourly_kas: hourlyKas,
+    revenue: hourlyRevenue,
+    cost: hourlyPowerCost,
+    profit: hourlyProfit,
+    network_hashrate: networkHashrate / 1e12
+  });
+  console.log('----------------------------------');
 
   return {
     kas_price: kasPrice,
